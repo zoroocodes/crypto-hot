@@ -8,12 +8,21 @@ datasource db {
 }
 
 model Cryptocurrency {
-  id            String   @id
-  name          String
-  symbol        String
-  image         String?
-  current_price Float?
-  wins          Int      @default(0)
-  losses        Int      @default(0)
-  total_votes   Int      @default(0)
+  id                String   @id
+  symbol            String
+  name              String
+  image             String?
+  current_price     Float?
+  market_cap        Float?
+  market_cap_rank   Int?
+  total_volume      Float?
+  price_change_24h  Float?
+  circulating_supply Float?
+  wins              Int      @default(0)
+  losses            Int      @default(0)
+  total_votes       Int      @default(0)
+  last_updated      DateTime @default(now())
+  
+  @@index([market_cap_rank])
+  @@index([symbol])
 }
