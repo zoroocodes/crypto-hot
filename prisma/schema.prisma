@@ -1,0 +1,19 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Cryptocurrency {
+  id            String   @id
+  name          String
+  symbol        String
+  image         String?
+  current_price Float?
+  wins          Int      @default(0)
+  losses        Int      @default(0)
+  total_votes   Int      @default(0)
+}
