@@ -3,20 +3,19 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "prisma generate && next build",
-    "start": "next start",
-    "lint": "next lint",
-    "postinstall": "prisma generate"
+    "sync": "npx ts-node scripts/syncCrypto.ts",
+    "postinstall": "prisma generate",
+    "db:push": "prisma db push",
+    "db:seed": "ts-node scripts/syncCrypto.ts"
   },
   "dependencies": {
     "@prisma/client": "latest",
+    "@vercel/postgres": "^0.10.0",
+    "lucide-react": "latest",
     "next": "latest",
     "react": "latest",
-    "react-dom": "latest",
-    "lucide-react": "latest"
+    "react-dom": "latest"
   },
-
   "devDependencies": {
     "@types/node": "latest",
     "@types/react": "latest",
@@ -26,11 +25,5 @@
     "prisma": "latest",
     "tailwindcss": "latest",
     "typescript": "latest"
-  },
-    "scripts": {
-      "sync": "npx ts-node scripts/syncCrypto.ts",
-      "postinstall": "prisma generate",
-    "db:push": "prisma db push",
-    "db:seed": "ts-node scripts/syncCrypto.ts"
-    }
+  }
 }

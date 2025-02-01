@@ -1,17 +1,8 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-// Create a new PrismaClient for this request
-const prisma = new PrismaClient();
+import { sql } from '@vercel/postgres';
 
 export async function GET() {
   try {
-    // First disconnect any existing connections
-    await prisma.$disconnect();
-    
-    // Then connect fresh
-    await prisma.$connect();
-
     console.log('Starting seed process...');
     
     // Fetch top 100 cryptocurrencies from CoinGecko
@@ -27,37 +18,37 @@ export async function GET() {
     console.log(`Fetched ${data.length} cryptocurrencies from CoinGecko`);
 
     // Clear existing data
-    await prisma.$executeRaw`TRUNCATE TABLE "Cryptocurrency" CASCADE;`;
+    await sql`DELETE FROM "Cryptocurrency";`;
 
-    // Insert cryptocurrencies one by one
-    const results = [];
+    // Insert cryptocurrencies
     for (const crypto of data) {
-      const result = await prisma.cryptocurrency.create({
-        data: {
-          id: crypto.id,
-          symbol: crypto.symbol,
-          name: crypto.name,
-          image: crypto.image,
-          current_price: crypto.current_price || 0,
-          market_cap: crypto.market_cap || 0,
-          market_cap_rank: crypto.market_cap_rank || 999999,
-          total_volume: crypto.total_volume || 0,
-          price_change_24h: crypto.price_change_percentage_24h || 0,
-          circulating_supply: crypto.circulating_supply || 0,
-          wins: 0,
-          losses: 0,
-          total_votes: 0,
-        },
-      });
-      results.push(result);
+      await sql`
+        INSERT INTO "Cryptocurrency" (
+          id, symbol, name, image, current_price, market_cap, 
+          market_cap_rank, total_volume, price_change_24h, 
+          circulating_supply, wins, losses, total_votes
+        ) VALUES (
+          ${crypto.id},
+          ${crypto.symbol},
+          ${crypto.name},
+          ${crypto.image},
+          ${crypto.current_price || 0},
+          ${crypto.market_cap || 0},
+          ${crypto.market_cap_rank || 999999},
+          ${crypto.total_volume || 0},
+          ${crypto.price_change_percentage_24h || 0},
+          ${crypto.circulating_supply || 0},
+          0,
+          0,
+          0
+        );
+      `;
     }
-
-    console.log(`Successfully added ${results.length} cryptocurrencies`);
 
     return NextResponse.json({
       success: true,
-      message: `Added ${results.length} cryptocurrencies`,
-      firstFew: results.slice(0, 3)
+      message: `Added ${data.length} cryptocurrencies`,
+      firstFew: data.slice(0, 3)
     });
 
   } catch (error) {
@@ -66,8 +57,5 @@ export async function GET() {
       error: 'Failed to seed database',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
-  } finally {
-    // Always disconnect
-    await prisma.$disconnect();
   }
 }
