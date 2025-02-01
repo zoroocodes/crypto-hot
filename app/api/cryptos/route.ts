@@ -1,36 +1,46 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '@/lib/prisma';
 
 export async function GET() {
   try {
-    const cryptos = await prisma.cryptocurrency.findMany({
-      orderBy: {
-        market_cap_rank: 'asc',
-      },
-      where: {
-        NOT: {
-          market_cap: null,
-        },
-      },
-    });
-
-    if (!cryptos || cryptos.length === 0) {
-      return NextResponse.json(
-        { error: 'No cryptocurrencies found' },
-        { status: 404 }
-      );
+    // Drop existing table if it exists
+    try {
+      await prisma.$executeRaw`DROP TABLE IF EXISTS "Cryptocurrency" CASCADE;`;
+    } catch (e) {
+      console.log('No existing table to drop');
     }
 
-    return NextResponse.json(cryptos);
+    // Create table
+    await prisma.$executeRaw`
+      CREATE TABLE IF NOT EXISTS "Cryptocurrency" (
+        "id" TEXT NOT NULL,
+        "symbol" TEXT NOT NULL,
+        "name" TEXT NOT NULL,
+        "image" TEXT,
+        "current_price" DOUBLE PRECISION,
+        "market_cap" DOUBLE PRECISION,
+        "market_cap_rank" INTEGER,
+        "total_volume" DOUBLE PRECISION,
+        "price_change_24h" DOUBLE PRECISION,
+        "circulating_supply" DOUBLE PRECISION,
+        "wins" INTEGER NOT NULL DEFAULT 0,
+        "losses" INTEGER NOT NULL DEFAULT 0,
+        "total_votes" INTEGER NOT NULL DEFAULT 0,
+        "last_updated" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "Cryptocurrency_pkey" PRIMARY KEY ("id")
+      );
+    `;
+
+    return NextResponse.json({
+      success: true,
+      message: 'Database migration completed'
+    });
+
   } catch (error) {
-    console.error('Error fetching cryptos:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch cryptocurrencies' },
-      { status: 500 }
-    );
-  } finally {
-    await prisma.$disconnect();
+    console.error('Migration error:', error);
+    return NextResponse.json({
+      error: 'Migration failed',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }
