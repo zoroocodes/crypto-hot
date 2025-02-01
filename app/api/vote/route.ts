@@ -1,32 +1,40 @@
-import { createClient } from '@vercel/edge-config';
 import { NextResponse } from 'next/server';
+import { PrismaClient } from '@prisma/client';
 
-export const runtime = 'edge';
+const prisma = new PrismaClient();
 
 export async function POST(request: Request) {
   try {
     const { winnerId, loserId } = await request.json();
-    
-    const client = createClient(process.env.EDGE_CONFIG);
-    const cryptos = await client.get('cryptos') || [];
 
-    // Update votes
-    const updatedCryptos = cryptos.map((crypto: any) => {
-      if (crypto.id === winnerId) {
-        return { ...crypto, wins: (crypto.wins || 0) + 1, total_votes: (crypto.total_votes || 0) + 1 };
-      }
-      if (crypto.id === loserId) {
-        return { ...crypto, losses: (crypto.losses || 0) + 1, total_votes: (crypto.total_votes || 0) + 1 };
-      }
-      return crypto;
+    const result = await prisma.$transaction(async (tx) => {
+      // Update winner stats
+      const winner = await tx.cryptocurrency.update({
+        where: { id: winnerId },
+        data: {
+          wins: { increment: 1 },
+          total_votes: { increment: 1 },
+        },
+      });
+
+      // Update loser stats
+      const loser = await tx.cryptocurrency.update({
+        where: { id: loserId },
+        data: {
+          losses: { increment: 1 },
+          total_votes: { increment: 1 },
+        },
+      });
+
+      return { winner, loser };
     });
 
-    // Save updated data
-    await client.set('cryptos', updatedCryptos);
-
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, data: result });
   } catch (error) {
-    console.error('Error recording vote:', error);
-    return NextResponse.json({ error: 'Failed to record vote' }, { status: 500 });
+    console.error('Vote error:', error);
+    return NextResponse.json(
+      { error: 'Failed to record vote' },
+      { status: 500 }
+    );
   }
 }
