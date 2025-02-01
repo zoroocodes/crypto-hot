@@ -9,7 +9,20 @@ export async function GET() {
       orderBy: {
         market_cap_rank: 'asc',
       },
+      where: {
+        NOT: {
+          market_cap: null,
+        },
+      },
     });
+
+    if (!cryptos || cryptos.length === 0) {
+      return NextResponse.json(
+        { error: 'No cryptocurrencies found' },
+        { status: 404 }
+      );
+    }
+
     return NextResponse.json(cryptos);
   } catch (error) {
     console.error('Error fetching cryptos:', error);
@@ -17,5 +30,7 @@ export async function GET() {
       { error: 'Failed to fetch cryptocurrencies' },
       { status: 500 }
     );
+  } finally {
+    await prisma.$disconnect();
   }
 }

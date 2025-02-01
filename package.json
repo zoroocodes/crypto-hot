@@ -16,6 +16,7 @@
     "react-dom": "latest",
     "lucide-react": "latest"
   },
+
   "devDependencies": {
     "@types/node": "latest",
     "@types/react": "latest",
@@ -25,5 +26,8 @@
     "prisma": "latest",
     "tailwindcss": "latest",
     "typescript": "latest"
-  }
+  },
+    "scripts": {
+      "sync": "npx ts-node scripts/syncCrypto.ts"
+    }
 }
