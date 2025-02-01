@@ -1,46 +1,15 @@
+import { createClient } from '@vercel/edge-config';
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+
+export const runtime = 'edge';
 
 export async function GET() {
   try {
-    // Drop existing table if it exists
-    try {
-      await prisma.$executeRaw`DROP TABLE IF EXISTS "Cryptocurrency" CASCADE;`;
-    } catch (e) {
-      console.log('No existing table to drop');
-    }
-
-    // Create table
-    await prisma.$executeRaw`
-      CREATE TABLE IF NOT EXISTS "Cryptocurrency" (
-        "id" TEXT NOT NULL,
-        "symbol" TEXT NOT NULL,
-        "name" TEXT NOT NULL,
-        "image" TEXT,
-        "current_price" DOUBLE PRECISION,
-        "market_cap" DOUBLE PRECISION,
-        "market_cap_rank" INTEGER,
-        "total_volume" DOUBLE PRECISION,
-        "price_change_24h" DOUBLE PRECISION,
-        "circulating_supply" DOUBLE PRECISION,
-        "wins" INTEGER NOT NULL DEFAULT 0,
-        "losses" INTEGER NOT NULL DEFAULT 0,
-        "total_votes" INTEGER NOT NULL DEFAULT 0,
-        "last_updated" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        CONSTRAINT "Cryptocurrency_pkey" PRIMARY KEY ("id")
-      );
-    `;
-
-    return NextResponse.json({
-      success: true,
-      message: 'Database migration completed'
-    });
-
+    const client = createClient(process.env.EDGE_CONFIG);
+    const cryptos = await client.get('cryptos') || [];
+    return NextResponse.json(cryptos);
   } catch (error) {
-    console.error('Migration error:', error);
-    return NextResponse.json({
-      error: 'Migration failed',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    console.error('Error fetching cryptos:', error);
+    return NextResponse.json({ error: 'Failed to fetch cryptos' }, { status: 500 });
   }
 }

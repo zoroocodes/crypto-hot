@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@prisma/client": "latest",
+    "@vercel/edge-config": "^1.4.0",
     "@vercel/postgres": "^0.10.0",
     "lucide-react": "latest",
     "next": "latest",
