@@ -1,7 +1,8 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
-import { Loader2, Flame, ThumbsUp, Trophy, TrendingUp, ArrowUpRight } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Loader2, Flame } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 
 interface Crypto {
@@ -51,23 +52,14 @@ const CryptoCard = ({
 }) => {
   if (!crypto) return null;
 
-  const socialMetrics = {
-    social_score: Math.floor(Math.random() * 30) + 70,
-    likes: Math.floor(Math.random() * 100000) + 50000,
-    trending_score: Math.floor(Math.random() * 20) + 80,
-    community_growth: (Math.random() * 20 + 5).toFixed(1)
-  };
-
   const calculateHotScore = () => {
     const scores = {
       price: Math.min(100, (crypto.current_price || 0) / 1000),
       market: Math.min(100, ((crypto.market_cap || 0) / 1e12) * 100),
-      volume: Math.min(100, ((crypto.total_volume || 0) / 1e10) * 100),
-      social: socialMetrics.social_score,
-      trending: socialMetrics.trending_score
+      volume: Math.min(100, ((crypto.total_volume || 0) / 1e10) * 100)
     };
     
-    return Math.floor(Object.values(scores).reduce((a, b) => a + b, 0) / 5);
+    return Math.floor(Object.values(scores).reduce((a, b) => a + b, 0) / 3);
   };
 
   return (
@@ -82,11 +74,12 @@ const CryptoCard = ({
         ${isSelected ? 'ring-4 ring-orange-500' : 'ring-1 ring-orange-900'}
         transition-all duration-300`}
       >
-        <div className="mb-6">
-          <img
-            src={crypto.image || '/api/placeholder/200/200'}
+        <div className="mb-6 relative w-full h-48">
+          <Image
+            src={crypto.image || '/placeholder.png'}
             alt={crypto.name}
-            className="w-full h-48 object-contain rounded-lg bg-gradient-to-b from-orange-900/20 to-red-900/20 p-4"
+            fill
+            className="rounded-lg object-contain bg-gradient-to-b from-orange-900/20 to-red-900/20 p-4"
           />
         </div>
 
@@ -158,8 +151,9 @@ const CryptoHotOrNot: React.FC = () => {
         if (!response.ok) throw new Error('Failed to fetch crypto data');
         const data = await response.json();
         setCryptoData(data);
-      } catch (error) {
+      } catch (err) {
         setError('Failed to load crypto data');
+        console.error('Error:', err);
       } finally {
         setLoading(false);
       }
@@ -168,21 +162,8 @@ const CryptoHotOrNot: React.FC = () => {
     fetchData();
   }, []);
 
-  useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
-        handleVote('left');
-      } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
-        handleVote('right');
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [currentPair]);
-
-  const handleVote = async (side: 'left' | 'right') => {
-    if (selectedSide !== null) return; // Prevent double voting
+  const handleVote = useCallback(async (side: 'left' | 'right') => {
+    if (selectedSide !== null) return;
     setSelectedSide(side);
     
     const winnerIndex = side === 'left' ? currentPair[0] : currentPair[1];
@@ -202,7 +183,6 @@ const CryptoHotOrNot: React.FC = () => {
         throw new Error('Failed to save vote');
       }
 
-      // Get next pair after delay
       setTimeout(() => {
         const indices = Array.from({ length: cryptoData.length }, (_, i) => i);
         const filteredIndices = indices.filter(i => i !== winnerIndex && i !== loserIndex);
@@ -213,17 +193,29 @@ const CryptoHotOrNot: React.FC = () => {
         setSelectedSide(null);
       }, 1000);
       
-      // Refresh data
       const refreshResponse = await fetch('/api/cryptos');
       if (refreshResponse.ok) {
         const freshData = await refreshResponse.json();
         setCryptoData(freshData);
       }
-    } catch (error) {
-      console.error('Vote error:', error);
+    } catch (err) {
+      console.error('Vote error:', err);
       setSelectedSide(null);
     }
-  };
+  }, [selectedSide, currentPair, cryptoData]);
+
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+        handleVote('left');
+      } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+        handleVote('right');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [handleVote]);
 
   if (loading) {
     return (
@@ -273,7 +265,8 @@ const CryptoHotOrNot: React.FC = () => {
         </div>
 
         <div className="mt-8 text-center">
-          <Link href="/rankings" 
+          <Link 
+            href="/rankings" 
             className="inline-block bg-gradient-to-r from-orange-600 to-red-600 px-8 py-3 
               rounded-lg text-xl font-bold hover:from-orange-500 hover:to-red-500 
               transition-all"

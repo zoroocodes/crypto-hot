@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Loader2, Trophy, TrendingUp, ChevronUp, ChevronDown, Flame } from 'lucide-react';
 
 interface Crypto {
@@ -29,8 +30,8 @@ export default function Rankings() {
         if (!response.ok) throw new Error('Failed to fetch data');
         const data = await response.json();
         setCryptos(data);
-      } catch (error) {
-        console.error('Error:', error);
+      } catch (err) {
+        console.error('Error:', err);
       } finally {
         setLoading(false);
       }
@@ -74,7 +75,7 @@ export default function Rankings() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-black to-red-950 text-orange-100 font-mono p-4">
       <div className="max-w-4xl mx-auto">
-        <div className="mb-8 flex justify-between items-center">
+        <div className="mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <h1 className="text-4xl font-bold text-orange-500">
             <span className="inline-flex items-center gap-2">
               <Trophy className="w-8 h-8" />
@@ -84,7 +85,7 @@ export default function Rankings() {
           <div className="flex gap-2">
             <button
               onClick={() => setSortBy('hot')}
-              className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
+              className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all duration-200 ${
                 sortBy === 'hot' 
                   ? 'bg-orange-500 text-white scale-105 shadow-lg' 
                   : 'bg-orange-900/50 text-orange-300 hover:bg-orange-800/50'
@@ -95,7 +96,7 @@ export default function Rankings() {
             </button>
             <button
               onClick={() => setSortBy('votes')}
-              className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
+              className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all duration-200 ${
                 sortBy === 'votes'
                   ? 'bg-orange-500 text-white scale-105 shadow-lg'
                   : 'bg-orange-900/50 text-orange-300 hover:bg-orange-800/50'
@@ -106,7 +107,7 @@ export default function Rankings() {
             </button>
             <button
               onClick={() => setSortBy('change')}
-              className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
+              className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all duration-200 ${
                 sortBy === 'change'
                   ? 'bg-orange-500 text-white scale-105 shadow-lg'
                   : 'bg-orange-900/50 text-orange-300 hover:bg-orange-800/50'
@@ -133,11 +134,14 @@ export default function Rankings() {
                     #{index + 1}
                   </div>
                   
-                  <img
-                    src={crypto.image || '/api/placeholder/48/48'}
-                    alt={crypto.name}
-                    className="w-12 h-12 rounded-lg"
-                  />
+                  <div className="relative w-12 h-12">
+                    <Image
+                      src={crypto.image || '/placeholder.png'}
+                      alt={crypto.name}
+                      fill
+                      className="rounded-lg object-contain"
+                    />
+                  </div>
                   
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
@@ -159,7 +163,6 @@ export default function Rankings() {
                     </div>
                   </div>
 
-                  {/* Hot Score */}
                   <div className="flex flex-col items-end">
                     <div className="text-2xl font-bold text-orange-400">
                       {winRate.toFixed(1)}%
@@ -170,7 +173,6 @@ export default function Rankings() {
                   </div>
                 </div>
 
-                {/* Progress Bar */}
                 <div className="mt-3">
                   <div className="h-2 bg-black/20 rounded-full overflow-hidden">
                     <div 
@@ -184,7 +186,6 @@ export default function Rankings() {
           })}
         </div>
 
-        {/* Back to Voting Button */}
         <div className="mt-8 text-center">
           <Link href="/" 
             className="inline-block bg-gradient-to-r from-orange-600 to-red-600 px-8 py-3 
