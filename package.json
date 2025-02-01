@@ -28,6 +28,9 @@
     "typescript": "latest"
   },
     "scripts": {
-      "sync": "npx ts-node scripts/syncCrypto.ts"
+      "sync": "npx ts-node scripts/syncCrypto.ts",
+      "postinstall": "prisma generate",
+    "db:push": "prisma db push",
+    "db:seed": "ts-node scripts/syncCrypto.ts"
     }
 }
